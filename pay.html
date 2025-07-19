@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Payment Required</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .box {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 400px;
+      margin: 0 auto;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #333;
+    }
+
+    p {
+      font-size: 1.1em;
+      color: #555;
+    }
+
+    .pay-btn {
+      margin-top: 20px;
+      background-color: #007bff;
+      color: white;
+      padding: 14px 28px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .pay-btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Almost there!</h2>
+    <p>To withdraw <strong>$<span id="amount">??</span></strong>, you must activate your cashout.</p>
+    <p><strong>Activation fee: $2.00</strong></p>
+    <button class="pay-btn">Pay $2 Now</button>
+  </div>
+
+  <script>
+    const amount = localStorage.getItem('amount') || '???';
+    document.getElementById('amount').textContent = amount;
+  </script>
+</body>
+</html>
