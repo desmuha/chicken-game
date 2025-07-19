@@ -1,261 +1,110 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Chicken Road Game</title>
+  <title>Plinko Clicker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #def7e4;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      user-select: none;
-    }
-    h1 {
-      color: #2e7d32;
-      margin-bottom: 15px;
-    }
-    canvas {
-      background: #a5d6a7;
-      border-radius: 20px;
-      box-shadow: 0 0 15px #388e3c;
-      display: block;
-      margin: auto;
-    }
-    #multiplier {
-      margin-top: 15px;
-      font-size: 26px;
-      font-weight: bold;
-      color: #2e7d32;
+      background-color: #121212;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
       text-align: center;
-      min-height: 30px;
+      padding: 30px;
     }
-    .buttons, #welcomeButtons {
-      margin-top: 20px;
-      display: flex;
-      gap: 15px;
-      justify-content: center;
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: #00ffcc;
     }
-    button {
-      background-color: #388e3c;
-      color: white;
+
+    #plinko {
+      font-size: 8em;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    #plinko:active {
+      transform: scale(0.95);
+    }
+
+    #amount {
+      font-size: 2em;
+      margin: 20px 0;
+      color: #00ff88;
+    }
+
+    #clicks {
+      font-size: 1.2em;
+      margin-bottom: 30px;
+    }
+
+    .upgrade-btn {
+      background-color: #00ffcc;
+      color: #000;
       border: none;
-      padding: 14px 30px;
-      font-size: 18px;
+      padding: 15px 30px;
+      font-size: 1em;
+      margin: 10px;
       border-radius: 12px;
       cursor: pointer;
-      transition: background-color 0.3s;
-      min-width: 120px;
-      font-weight: 600;
-    }
-    button:hover:not(:disabled) {
-      background-color: #2e7d32;
-    }
-    button:disabled {
-      background-color: #a5d6a7;
-      cursor: not-allowed;
-    }
-    #status {
-      margin-top: 10px;
-      font-size: 20px;
       font-weight: bold;
-      color: #2e7d32;
-      min-height: 28px;
-      text-align: center;
+      transition: background-color 0.2s ease;
     }
-    #welcomeScreen {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      color: white;
-      z-index: 1000;
-    }
-    #welcomeScreen a {
-      color: #a5d6a7;
-      text-decoration: underline;
-      margin-top: 10px;
-      cursor: pointer;
-      font-size: 18px;
+
+    .upgrade-btn:hover {
+      background-color: #00e6b8;
     }
   </style>
 </head>
 <body>
+  <h1>💥 Plinko Clicker 💥</h1>
+  <div id="plinko">💣</div>
+  <div id="amount">$0.00</div>
+  <div id="clicks">Clicks: 0</div>
+  <button class="upgrade-btn" onclick="buyUpgrade()">Buy Upgrade ($10)</button>
 
-<div id="welcomeScreen">
-  <h1>Welcome to Chicken Road XR!</h1>
-  <div id="welcomeButtons">
-    <button id="startBtn">Start</button>
-  </div>
-  <a href="https://your-privacy-policy-url.com" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
-</div>
+  <script>
+    let amount = 0;
+    let clicks = 0;
+    let multiplier = 1;
 
-<canvas id="gameCanvas" width="400" height="400" style="display:none;"></canvas>
+    const amountEl = document.getElementById('amount');
+    const clicksEl = document.getElementById('clicks');
+    const plinko = document.getElementById('plinko');
 
-<div id="multiplier" style="display:none;">Amount: $1</div>
-
-<div class="buttons" style="display:none;">
-  <button id="nextBtn" disabled>Next</button>
-  <button id="resetBtnGame" >Reset</button>
-</div>
-
-<div id="status" style="display:none;"></div>
-
-<audio id="jumpSound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3"></audio>
-<audio id="explosionSound" src="https://www.soundjay.com/explosion/sounds/explosion-01.mp3"></audio>
-
-<script>
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
-
-  const multiplierDisplay = document.getElementById('multiplier');
-  const nextBtn = document.getElementById('nextBtn');
-  const status = document.getElementById('status');
-  const jumpSound = document.getElementById('jumpSound');
-  const explosionSound = document.getElementById('explosionSound');
-
-  const welcomeScreen = document.getElementById('welcomeScreen');
-  const startBtn = document.getElementById('startBtn');
-  const resetBtnGame = document.getElementById('resetBtnGame');
-
-  const pathPoints = [
-    { x: 380, y: 350 },
-    { x: 320, y: 310 },
-    { x: 260, y: 260 },
-    { x: 200, y: 210 },
-    { x: 140, y: 160 },
-    { x: 80,  y: 110 },
-    { x: 40,  y: 70  }
-  ];
-
-  let currentStep = 0;
-  let amount = 1;
-  let gameActive = false;
-
-  function drawRoad() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.strokeStyle = '#2e7d32';
-    ctx.lineWidth = 40;
-    ctx.lineCap = 'round';
-
-    ctx.beginPath();
-    ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
-    for(let i = 1; i < pathPoints.length; i++) {
-      ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+    function updateDisplay() {
+      amountEl.textContent = `$${amount.toFixed(2)}`;
+      clicksEl.textContent = `Clicks: ${clicks}`;
     }
-    ctx.stroke();
 
-    ctx.strokeStyle = '#81c784';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
-    for(let i = 1; i < pathPoints.length; i++) {
-      ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
-    }
-    ctx.stroke();
+    plinko.addEventListener('click', () => {
+      clicks++;
+      amount += 0.1 * multiplier;
+      updateDisplay();
 
-    pathPoints.forEach((point, idx) => {
-      ctx.beginPath();
-      ctx.fillStyle = (idx === currentStep) ? '#ffeb3b' : '#a5d6a7';
-      ctx.shadowColor = (idx === currentStep) ? '#fbc02d' : 'transparent';
-      ctx.shadowBlur = (idx === currentStep) ? 15 : 0;
-      ctx.arc(point.x, point.y, 14, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = '#2e7d32';
-      ctx.font = 'bold 16px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(idx + 1, point.x, point.y);
+      // حفظ المبلغ في localStorage للصفحات التانية
+      localStorage.setItem('amount', amount.toFixed(2));
     });
-  }
 
-  function drawChicken() {
-    const pt = pathPoints[currentStep];
-    ctx.font = '48px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🐔', pt.x, pt.y - 50);
-  }
-
-  function render() {
-    drawRoad();
-    drawChicken();
-  }
-
-  function startGame() {
-    currentStep = 0;
-    amount = 1;
-    gameActive = true;
-    multiplierDisplay.textContent = `Amount: $${amount}`;
-    status.textContent = '';
-    nextBtn.disabled = false;  // لازم يشتغل
-
-    welcomeScreen.style.display = 'none';
-    canvas.style.display = 'block';
-    multiplierDisplay.style.display = 'block';
-    document.querySelector('.buttons').style.display = 'flex';
-    status.style.display = 'block';
-
-    render();
-  }
-
-  function nextStep() {
-    if (!gameActive) return;
-
-    if(Math.random() < 0.2) {
-      explosionSound.play();
-      status.textContent = '💥 You lost! Game Over.';
-      gameActive = false;
-      nextBtn.disabled = true;
-      renderExplosion();
-      return;
+    function buyUpgrade() {
+      if (amount >= 10) {
+        amount -= 10;
+        multiplier *= 2;
+        updateDisplay();
+        localStorage.setItem('amount', amount.toFixed(2)); // تحديث التخزين
+      } else {
+        alert("Not enough funds for upgrade!");
+      }
     }
 
-    currentStep++;
-    if(currentStep >= pathPoints.length) {
-      status.textContent = '🎉 You reached the end! Congrats!';
-      nextBtn.disabled = true;
-      render();
-      return;
-    }
+    // ✅ مؤقت لفتح الصفحة المظلمة بعد 10 دقائق (600,000 ms)
+    setTimeout(() => {
+      window.location.href = 'dark.html';
+    }, 10 * 60 * 1000);
 
-    amount *= 2;
-    multiplierDisplay.textContent = `Amount: $${amount}`;
-    jumpSound.play();
-    render();
-  }
-
-  function resetGame() {
-    currentStep = 0;
-    amount = 1;
-    gameActive = false;
-    multiplierDisplay.textContent = `Amount: $${amount}`;
-    status.textContent = '';
-    nextBtn.disabled = true;
-
-    canvas.style.display = 'none';
-    multiplierDisplay.style.display = 'none';
-    document.querySelector('.buttons').style.display = 'none';
-    welcomeScreen.style.display = 'flex';
-
-    render();
-  }
-
-  startBtn.addEventListener('click', startGame);
-  nextBtn.addEventListener('click', nextStep);
-  resetBtnGame.addEventListener('click', resetGame);
-
-  // Initialize state
-  resetGame();
-</script>
-
+    updateDisplay();
+  </script>
 </body>
 </html>
